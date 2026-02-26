@@ -1,0 +1,41 @@
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs/temp
+*.log
+*.tmp
+tmp/
+temp/
+
+# Secrets/keys
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+tfplan
+*.tfvars
+*.tfvars.json
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ansible runtime/vendor artifacts
+ansible/.ansible/
+ansible/pydeps/
+ansible/collections/
+
+# Archives/artifacts
+*.tar
+*.tar.gz
+*.zip

@@ -1,0 +1,6 @@
+---
+kubernetes_version: "1.30"
+kubernetes_repo_baseurl: "https://pkgs.k8s.io/core:/stable:/v1.30/rpm/"
+kubernetes_repo_gpgkey: "https://pkgs.k8s.io/core:/stable:/v1.30/rpm/repodata/repomd.xml.key"
+pod_network_cidr: "10.244.0.0/16"
+control_plane_endpoint_port: "6443"
