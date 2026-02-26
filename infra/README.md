@@ -86,3 +86,9 @@ terraform destroy
 - Networking layer: DEFINED
 - Compute layer: DEFINED
 - Tagging for Ansible dynamic inventory: ENABLED
+
+---
+
+## Command And Issue Log
+
+- `COMMANDS_AND_ISSUES.md` (full destroy/recreate command history and issue resolutions)

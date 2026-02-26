@@ -2,7 +2,7 @@
 plugin: amazon.aws.aws_ec2
 hostvars_prefix: aws_
 regions:
-  - eu-north-1
+  - "{{ lookup('env', 'AWS_REGION') | default('eu-north-1', true) }}"
 
 filters:
   instance-state-name: running

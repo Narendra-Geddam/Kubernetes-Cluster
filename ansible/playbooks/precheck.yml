@@ -1,0 +1,54 @@
+---
+- name: Local precheck for Ansible execution prerequisites
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Ensure ANSIBLE_PRIVATE_KEY_FILE is provided
+      ansible.builtin.assert:
+        that:
+          - lookup('env', 'ANSIBLE_PRIVATE_KEY_FILE') | length > 0
+        fail_msg: "Set ANSIBLE_PRIVATE_KEY_FILE before running precheck."
+
+    - name: Validate private key file exists
+      ansible.builtin.stat:
+        path: "{{ lookup('env', 'ANSIBLE_PRIVATE_KEY_FILE') }}"
+      register: key_stat
+
+    - name: Ensure private key file is readable
+      ansible.builtin.assert:
+        that:
+          - key_stat.stat.exists
+          - key_stat.stat.isreg
+          - key_stat.stat.readable
+        fail_msg: "ANSIBLE_PRIVATE_KEY_FILE does not point to a readable file."
+
+- name: Inventory and SSH reachability precheck
+  hosts: "role_Control_Plane_Node:role_Worker_Node_1:role_Worker_Node_2"
+  gather_facts: false
+
+  tasks:
+    - name: Verify SSH connectivity to all nodes
+      ansible.builtin.ping:
+
+- name: Group integrity precheck
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Validate required role groups are present
+      ansible.builtin.assert:
+        that:
+          - groups['role_Control_Plane_Node'] | default([]) | length >= 2
+          - groups['role_Worker_Node_1'] | default([]) | length >= 2
+          - groups['role_Worker_Node_2'] | default([]) | length >= 2
+        fail_msg: "Inventory missing required role groups. Check EC2 tags Cluster/Role."
+
+    - name: Validate required cluster groups are present
+      ansible.builtin.assert:
+        that:
+          - groups['cluster_Dev_Test_Cluster'] | default([]) | length >= 3
+          - groups['cluster_Production_Cluster'] | default([]) | length >= 3
+        fail_msg: "Inventory missing required cluster groups. Check Cluster tags."

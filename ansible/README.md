@@ -2,7 +2,7 @@
 
 # Ansible Kubernetes Configuration
 
-### Dynamic AWS inventory and automated kubeadm cluster bring-up
+### Dynamic AWS inventory and role-based kubeadm cluster bring-up
 
 ![Ansible](https://img.shields.io/badge/Ansible-Playbook%20Flow-0f172a?style=for-the-badge)
 ![Inventory](https://img.shields.io/badge/Inventory-Dynamic%20EC2-1e293b?style=for-the-badge)
@@ -42,12 +42,24 @@ export ANSIBLE_PRIVATE_KEY_FILE=/absolute/path/to/Ansible.pem
 - `requirements.yml`
 - `inventory/aws_ec2.yml`
 - `group_vars/all.yml`
+- `playbooks/precheck.yml`
 - `playbooks/site.yml`
-- `playbooks/bootstrap.yml`
-- `playbooks/control_plane.yml`
-- `playbooks/workers.yml`
+- `roles/bootstrap/tasks/main.yml`
+- `roles/bootstrap/handlers/main.yml`
+- `roles/control_plane/tasks/main.yml`
+- `roles/workers/tasks/main.yml`
+- `run-precheck.sh`
 - `run-inventory.sh`
 - `run-site.sh`
+
+---
+
+## Precheck (Mandatory)
+
+```bash
+cd ansible
+./run-precheck.sh
+```
 
 ---
 
@@ -56,7 +68,6 @@ export ANSIBLE_PRIVATE_KEY_FILE=/absolute/path/to/Ansible.pem
 ```bash
 cd ansible
 ansible-galaxy collection install -r requirements.yml
-./run-inventory.sh
 ./run-site.sh
 ```
 
@@ -99,5 +110,12 @@ Expected groups include:
 ## Final Status
 
 - Dynamic inventory wiring: READY
-- Playbook orchestration: READY
+- Role orchestration: READY
 - Multi-cluster bootstrap flow: READY
+
+---
+
+## Command And Issue Log
+
+- `COMMANDS_AND_ISSUES.md` (full command history and troubleshooting from destroy/recreate + reapply attempt)
+- `NEW_INFRA_ROLE_APPLY_GUIDE.md` (manual commands and prerequisites for reusing roles on new infra)

@@ -57,7 +57,10 @@ ansible-galaxy collection install -r requirements.yml
 ## Associated Documentation
 
 - `infra/README.md`
+- `infra/COMMANDS_AND_ISSUES.md`
 - `ansible/README.md`
+- `ansible/COMMANDS_AND_ISSUES.md`
+- `ansible/NEW_INFRA_ROLE_APPLY_GUIDE.md`
 - `ansible/playbooks/README.md`
 - `ansible/inventory/README.md`
 

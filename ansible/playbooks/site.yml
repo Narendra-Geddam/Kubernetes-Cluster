@@ -1,4 +1,28 @@
 ---
-- import_playbook: bootstrap.yml
-- import_playbook: control_plane.yml
-- import_playbook: workers.yml
+- name: Bootstrap Kubernetes prerequisites on all nodes
+  hosts: "role_Control_Plane_Node:role_Worker_Node_1:role_Worker_Node_2"
+  become: true
+  gather_facts: true
+  serial: 3
+  vars_files:
+    - ../group_vars/all.yml
+  roles:
+    - bootstrap
+
+- name: Initialize control planes for each cluster
+  hosts: role_Control_Plane_Node
+  become: true
+  gather_facts: true
+  serial: 1
+  vars_files:
+    - ../group_vars/all.yml
+  roles:
+    - control_plane
+
+- name: Join workers to their respective clusters
+  hosts: "role_Worker_Node_1:role_Worker_Node_2"
+  become: true
+  gather_facts: true
+  serial: 2
+  roles:
+    - workers
