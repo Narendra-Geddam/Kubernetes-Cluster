@@ -6,52 +6,68 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
   }
 }
 
 locals {
+  # Workers are pinned across two distinct AZ-backed subnets for HA.
+  worker_subnet_ids = [
+    aws_subnet.dev_test_cluster.id,
+    aws_subnet.production_cluster.id
+  ]
+
+  # Control plane subnet is randomized per cluster between the two subnets.
+  control_plane_subnet_by_cluster = {
+    devtest    = local.worker_subnet_ids[random_integer.control_plane_subnet_index["devtest"].result]
+    production = local.worker_subnet_ids[random_integer.control_plane_subnet_index["production"].result]
+  }
+
   cluster_nodes = {
     devtest_control_plane = {
       cluster       = "Dev/Test Cluster"
       name          = "Dev/Test Cluster - Control Plane Node"
       role          = "Control Plane Node"
       instance_type = var.control_plane_instance_type
-      subnet_id     = aws_subnet.dev_test_cluster.id
+      subnet_id     = local.control_plane_subnet_by_cluster.devtest
     }
     devtest_worker_1 = {
       cluster       = "Dev/Test Cluster"
       name          = "Dev/Test Cluster - Worker Node 1"
       role          = "Worker Node 1"
       instance_type = var.worker_instance_type
-      subnet_id     = aws_subnet.dev_test_cluster.id
+      subnet_id     = local.worker_subnet_ids[0]
     }
     devtest_worker_2 = {
       cluster       = "Dev/Test Cluster"
       name          = "Dev/Test Cluster - Worker Node 2"
       role          = "Worker Node 2"
       instance_type = var.worker_instance_type
-      subnet_id     = aws_subnet.dev_test_cluster.id
+      subnet_id     = local.worker_subnet_ids[1]
     }
     production_control_plane = {
       cluster       = "Production Cluster"
       name          = "Production Cluster - Control Plane Node"
       role          = "Control Plane Node"
       instance_type = var.control_plane_instance_type
-      subnet_id     = aws_subnet.production_cluster.id
+      subnet_id     = local.control_plane_subnet_by_cluster.production
     }
     production_worker_1 = {
       cluster       = "Production Cluster"
       name          = "Production Cluster - Worker Node 1"
       role          = "Worker Node 1"
       instance_type = var.worker_instance_type
-      subnet_id     = aws_subnet.production_cluster.id
+      subnet_id     = local.worker_subnet_ids[0]
     }
     production_worker_2 = {
       cluster       = "Production Cluster"
       name          = "Production Cluster - Worker Node 2"
       role          = "Worker Node 2"
       instance_type = var.worker_instance_type
-      subnet_id     = aws_subnet.production_cluster.id
+      subnet_id     = local.worker_subnet_ids[1]
     }
   }
 }
@@ -59,6 +75,13 @@ locals {
 # Read available AZs to place Dev/Test and Production in separate zones.
 data "aws_availability_zones" "available" {
   state = "available"
+}
+
+# Randomize control plane placement per cluster across the two worker AZs.
+resource "random_integer" "control_plane_subnet_index" {
+  for_each = toset(["devtest", "production"])
+  min      = 0
+  max      = 1
 }
 
 # Resolve the latest Amazon Linux 2023 AMI for all cluster nodes.
@@ -97,7 +120,7 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
-# Dev/Test cluster subnet.
+# Shared subnet A (AZ 1).
 resource "aws_subnet" "dev_test_cluster" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = var.devtest_subnet_cidr
@@ -109,7 +132,7 @@ resource "aws_subnet" "dev_test_cluster" {
   }
 }
 
-# Production cluster subnet.
+# Shared subnet B (AZ 2).
 resource "aws_subnet" "production_cluster" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = var.production_subnet_cidr
