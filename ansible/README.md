@@ -1,121 +1,50 @@
 <div align="center">
 
-# Ansible Kubernetes Configuration
+<h1>Ansible Kubernetes Bootstrap</h1>
 
-### Dynamic AWS inventory and role-based kubeadm cluster bring-up
+<p><strong>Role-based automation to convert EC2 hosts into working Kubernetes clusters</strong></p>
 
-![Ansible](https://img.shields.io/badge/Ansible-Playbook%20Flow-0f172a?style=for-the-badge)
-![Inventory](https://img.shields.io/badge/Inventory-Dynamic%20EC2-1e293b?style=for-the-badge)
-![Kubeadm](https://img.shields.io/badge/Kubeadm-Bootstrap%20%2B%20Join-334155?style=for-the-badge)
-![CNI](https://img.shields.io/badge/CNI-Flannel-475569?style=for-the-badge)
+![Ansible](https://img.shields.io/badge/Ansible-Core-0ea5e9?style=for-the-badge)
+![Inventory](https://img.shields.io/badge/Inventory-AWS%20Dynamic-2563eb?style=for-the-badge)
+![Kubeadm](https://img.shields.io/badge/Kubeadm-Init%20%2B%20Join-1d4ed8?style=for-the-badge)
+![CNI](https://img.shields.io/badge/CNI-Flannel-4338ca?style=for-the-badge)
 
 </div>
 
 ---
 
-## Objective
+## What It Does
 
-Configure EC2 nodes into two working Kubernetes clusters after Terraform provisioning.
-
-Target layout:
-
-- Dev/Test Cluster: 1 control plane + 2 workers
-- Production Cluster: 1 control plane + 2 workers
-
----
+- validates environment prerequisites (`precheck.yml`)
+- prepares all nodes (`bootstrap` role)
+- initializes control planes (`control_plane` role)
+- joins workers to the correct cluster (`workers` role)
 
 ## Prerequisites
 
-- `../infra` already applied
-- AWS credentials available
-- SSH key exported:
-
 ```bash
-export ANSIBLE_PRIVATE_KEY_FILE=/absolute/path/to/Ansible.pem
-```
-
----
-
-## Files
-
-- `ansible.cfg`
-- `requirements.yml`
-- `inventory/aws_ec2.yml`
-- `group_vars/all.yml`
-- `playbooks/precheck.yml`
-- `playbooks/site.yml`
-- `roles/bootstrap/tasks/main.yml`
-- `roles/bootstrap/handlers/main.yml`
-- `roles/control_plane/tasks/main.yml`
-- `roles/workers/tasks/main.yml`
-- `run-precheck.sh`
-- `run-inventory.sh`
-- `run-site.sh`
-
----
-
-## Precheck (Mandatory)
-
-```bash
-cd ansible
-./run-precheck.sh
-```
-
----
-
-## Deploy
-
-```bash
-cd ansible
+export ANSIBLE_PRIVATE_KEY_FILE=/absolute/path/to/key.pem
 ansible-galaxy collection install -r requirements.yml
+```
+
+## Run Sequence
+
+```bash
+./run-precheck.sh
 ./run-site.sh
 ```
 
----
+## Key Paths
 
-## Verify
+| Path | Purpose |
+|---|---|
+| `inventory/aws_ec2.yml` | dynamic inventory source |
+| `playbooks/precheck.yml` | safety checks |
+| `playbooks/site.yml` | orchestrated deployment |
+| `roles/*` | role implementations |
 
-```bash
-cd ansible
-./run-inventory.sh
-ansible-inventory -i inventory/aws_ec2.yml --graph
-```
+## Troubleshooting
 
-Expected groups include:
-
-- `cluster_Dev_Test_Cluster`
-- `cluster_Production_Cluster`
-- `role_Control_Plane_Node`
-- `role_Worker_Node_1`
-- `role_Worker_Node_2`
-
----
-
-## Common Problems Faced
-
-1. `Permission denied (publickey)`
-- Cause: invalid or missing `ANSIBLE_PRIVATE_KEY_FILE`
-- Fix: export a valid PEM path and retry
-
-2. Dynamic inventory returns empty
-- Cause: missing AWS credentials or region/tag mismatch
-- Fix: verify creds and confirm EC2 tags `Cluster` and `Role`
-
-3. Worker join fails
-- Cause: control plane not initialized yet
-- Fix: run full `site.yml` flow to preserve task order
-
----
-
-## Final Status
-
-- Dynamic inventory wiring: READY
-- Role orchestration: READY
-- Multi-cluster bootstrap flow: READY
-
----
-
-## Command And Issue Log
-
-- `COMMANDS_AND_ISSUES.md` (full command history and troubleshooting from destroy/recreate + reapply attempt)
-- `NEW_INFRA_ROLE_APPLY_GUIDE.md` (manual commands and prerequisites for reusing roles on new infra)
+- inventory empty: verify AWS credentials and EC2 tags
+- SSH failures: confirm `ANSIBLE_PRIVATE_KEY_FILE`
+- join issues: run full site playbook in order

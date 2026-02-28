@@ -1,75 +1,48 @@
 <div align="center">
 
-# Kubernetes Role Workflow
+<h1>Playbook Orchestration</h1>
 
-### Role-based orchestration for bootstrap, control-plane init, and worker join
+<p><strong>Execution order and role responsibilities for reproducible Kubernetes bring-up</strong></p>
 
-![Bootstrap](https://img.shields.io/badge/Stage%201-Bootstrap-0f172a?style=for-the-badge)
-![Control Plane](https://img.shields.io/badge/Stage%202-Control%20Plane-1e293b?style=for-the-badge)
-![Workers](https://img.shields.io/badge/Stage%203-Worker%20Join-334155?style=for-the-badge)
-![Site](https://img.shields.io/badge/Entry-site.yml-475569?style=for-the-badge)
+![Precheck](https://img.shields.io/badge/Stage-Precheck-0ea5e9?style=for-the-badge)
+![Bootstrap](https://img.shields.io/badge/Stage-Bootstrap-2563eb?style=for-the-badge)
+![ControlPlane](https://img.shields.io/badge/Stage-Control%20Plane-1d4ed8?style=for-the-badge)
+![Workers](https://img.shields.io/badge/Stage-Workers-4338ca?style=for-the-badge)
 
 </div>
 
 ---
 
-## Objective
+## Playbooks
 
-Define a reliable role-based sequence to convert raw EC2 instances into active Kubernetes clusters.
+| Playbook | Purpose |
+|---|---|
+| `precheck.yml` | Validate key env vars, inventory visibility, and host readiness |
+| `site.yml` | Execute full cluster build workflow |
 
----
+## Flow
 
-## Files
+1. run precheck to fail fast
+2. apply bootstrap role to all nodes
+3. initialize control plane nodes
+4. join workers using generated join tokens
 
-- `precheck.yml` - validates env/key/inventory/SSH and required group counts before apply
-- `site.yml` - orchestrates all stages in order
-- `../roles/bootstrap/tasks/main.yml` - OS and Kubernetes prerequisites on all nodes
-- `../roles/bootstrap/handlers/main.yml` - containerd restart handler
-- `../roles/control_plane/tasks/main.yml` - `kubeadm init`, kubeconfig setup, Flannel install, join token creation
-- `../roles/workers/tasks/main.yml` - resolves matching control plane and joins workers
-
----
-
-## Execution Flow
-
-0. `precheck.yml`
-- Verifies prerequisites before any cluster mutation.
-
-1. `bootstrap` role
-- Disables swap
-- Configures kernel modules/sysctl
-- Installs containerd, kubeadm, kubelet, kubectl
-
-2. `control_plane` role
-- Initializes control plane per cluster
-- Installs Flannel CNI
-- Saves worker join command as host fact
-
-3. `workers` role
-- Maps worker to its cluster group
-- Executes cluster-specific join command
-
----
-
-## Run
+## Commands
 
 ```bash
-cd ansible
 ansible-playbook -i inventory/aws_ec2.yml playbooks/precheck.yml
 ansible-playbook -i inventory/aws_ec2.yml playbooks/site.yml
 ```
 
-Or:
+Wrapper scripts:
 
 ```bash
 ./run-precheck.sh
 ./run-site.sh
 ```
 
----
+## Design Notes
 
-## Final Status
-
-- Ordered orchestration: ENABLED
-- Cluster-specific join logic: ENABLED
-- Idempotent rerun behavior (core tasks): SUPPORTED
+- role order is intentional and should not be shuffled
+- control plane facts are used to join workers correctly
+- most tasks are idempotent and safe to rerun

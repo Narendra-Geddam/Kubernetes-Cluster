@@ -39,3 +39,6 @@ ansible/collections/
 *.tar
 *.tar.gz
 *.zip
+
+# Terraform plan artifacts
+tfplan-*
