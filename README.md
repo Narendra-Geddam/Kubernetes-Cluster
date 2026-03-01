@@ -54,3 +54,9 @@ ansible-inventory -i inventory/aws_ec2.yml --graph
 - `ansible/README.md`
 - `ansible/playbooks/README.md`
 - `ansible/inventory/README.md`
+
+## CI/CD Note
+
+- Jenkins pipelines build and push Docker images using the Jenkins credential `docker-creds`.
+- Helm image values are updated from CI and pushed back to Git using `git-creds`.
+- Image updates target `kubecoin-helm-charts/kubecoin/values.yaml`.
